@@ -1,5 +1,7 @@
 # ScoutAI
 
+[Live demo](https://scoutai-demo.onrender.com/)
+
 ScoutAI is a demo for finding internships and projects by skills, interests, and location. **All 150 seeded opportunities are fictional; they are not open positions.**
 
 - **Stack:** React, Vite, FastAPI, PostgreSQL, Docker.
