@@ -34,7 +34,7 @@ def run_agent(db, message):
             if call['name'] not in ('search_opportunities','get_opportunity_details'): raise ValueError('Invalid tool')
             tool_name, args, mode = call['name'], json.loads(call['arguments']), 'llm'
         except Exception:
-            log.warning('Agent provider unavailable; using fallback', exc_info=True)
+            log.warning('Agent provider unavailable; using fallback')
     if mode == 'fallback':
         match = re.search(r'\b(?:id|opportunity)\s*#?\s*(\d+)\b', message, re.I)
         if match: tool_name, args = 'get_opportunity_details', {'opportunity_id':int(match.group(1))}

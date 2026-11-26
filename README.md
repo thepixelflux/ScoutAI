@@ -1,5 +1,23 @@
 # ScoutAI
 
+## Deploy the demo on Render (prepared, not deployed)
+
+This repository includes `render.yaml` and a root `Dockerfile` for one free Render web service serving the built React frontend and FastAPI on the same origin, plus a free Render Postgres database. The database migrations enable pgvector for the existing schema; **embeddings are disabled**, no model is downloaded, and results use keyword and skill ranking. The UI reports the fallback. All 150 seeded opportunities are fictional demo data, not open positions. On an empty database the service runs migrations and seeds the examples on startup; it skips seeding if any opportunities exist. One service instance is assumed.
+
+Render's free web service spins down after inactivity, and a free Postgres database expires after 30 days. Free tiers have usage limits and may change; review the [current limits](https://render.com/docs/free) and any charges before confirming. This is a demo setup, not a durable production deployment. Render supports the [vector extension](https://render.com/docs/postgresql-extensions). No resources are created by this repository until you explicitly deploy.
+
+1. Push branch `work` to GitHub. Sign in to [Render](https://dashboard.render.com/) and connect the GitHub account/repository under **Account Settings → Git Deployment Credentials → Add credential**.
+2. In the Render dashboard select **New → Blueprint** (or **Blueprints → New Blueprint Instance**). Select `thepixelflux/ScoutAI`, choose branch `work`, and continue. Render reads `render.yaml` from that branch.
+3. Review the proposed resources: `scoutai-demo` is a **free** Docker web service and `scoutai-db` is **free** Postgres 16. Choose the same region for both if prompted. Review the price and do not accept paid options. Render automatically injects the database connection string; do not paste it into source code.
+4. When prompted for `LLM_API_KEY`, paste your Groq API key into Render's secret environment variable field. Never put it in Git or the frontend. The Blueprint uses `https://api.groq.com/openai/v1` and `openai/gpt-oss-20b`; confirm the model is available to your account. Review Groq's current usage limits and billing before use. Queries are sent to Groq for intent parsing; if the provider fails, rule-based parsing takes over. Keep `EMBEDDINGS_ENABLED=false` and `CORS_ORIGINS` empty for the same-origin site.
+5. Only when ready to deploy, click **Apply** / **Create Blueprint Instance**. Wait for the database and web service to become healthy, then open the web service's `onrender.com` URL. Search for “Python internship”: the screen should label results **FICTIONAL DEMO** and show **Keyword and skills ranking (fallback)**. It reports AI intent or rule-based intent fallback separately. Open `/api/health` to check the database connection.
+6. Under the web service's **Environment** page, update the Groq key if needed and redeploy. Never expose database credentials or the key in the browser, screenshots, or logs. To stop the demo, delete the Blueprint resources in Render; the free database expires independently.
+
+API requests have a 3 MiB body limit and a per-process limit of 30 requests per minute per connection IP, plus 300 total per minute. Health checks and CORS preflights are excluded. The server deliberately ignores untrusted forwarded headers: behind Render's proxy multiple visitors may share a limit, and restarts reset counters. This is an abuse deterrent for a single demo instance, not a distributed or user-specific quota. Add a trusted edge/distributed rate limiter and authentication before a larger public rollout. CORS is disabled for cross-origin browsers in the Blueprint; set `CORS_ORIGINS` to explicit comma-separated origins only if a separate frontend is introduced. The API persists search queries in `search_logs`; avoid submitting sensitive information. Resume contents are processed in memory and only extracted skills are returned.
+
+The instructions below describe the earlier local Compose and optional embedding workflows; they are not required for this deployment.
+
+
 ScoutAI is a demo internship and project discovery app. Its 150 generated listings are **fictional samples**, not real vacancies. Imported listings are labeled verified only because the importer is intended for sources verified by the operator; ScoutAI does not independently verify them.
 
 ## Quick start

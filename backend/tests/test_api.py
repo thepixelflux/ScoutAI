@@ -140,3 +140,42 @@ def test_incompatible_model_vectors_are_not_used(monkeypatch):
         result = retrieval.search(db, SearchRequest(query='semantic probe', limit=5))
         assert result.retrieval_mode == 'lexical+hybrid'
         db.rollback()
+
+def test_fallback_and_demo_catalog(client, monkeypatch):
+    from app.config import settings
+    from sqlalchemy import func
+    monkeypatch.setattr(settings, 'embeddings_enabled', False)
+    monkeypatch.setattr(settings, 'llm_api_key', '')
+    result = client.post('/api/search', json={'query': 'Python', 'limit': 100})
+    assert result.status_code == 200
+    assert result.json()['retrieval_mode'] == 'lexical+hybrid'
+    assert result.json()['intent_mode'] == 'fallback'
+    with SessionLocal() as db:
+        assert db.scalar(select(func.count()).select_from(Opportunity)) == 150
+        assert db.scalar(select(func.count()).select_from(Opportunity).where(Opportunity.source_type != 'sample')) == 0
+
+def test_security_limits_and_cors():
+    from fastapi import FastAPI, Request
+    from fastapi.middleware.cors import CORSMiddleware
+    from app.security import ApiProtection
+    from app.config import Settings
+    from pydantic import ValidationError
+    with pytest.raises(ValidationError): Settings(cors_origins='*')
+    with pytest.raises(ValidationError): SearchRequest(skills=['x' * 101])
+    test_app = FastAPI()
+    test_app.add_middleware(ApiProtection, limit=2)
+    test_app.add_middleware(CORSMiddleware, allow_origins=['https://example.com'], allow_methods=['POST'], allow_headers=['Content-Type'])
+    @test_app.post('/api/test')
+    async def endpoint(request: Request):
+        return {'size': len(await request.body())}
+    with TestClient(test_app) as c:
+        assert c.post('/api/test', content=b'a', headers={'Origin':'https://example.com'}).headers['access-control-allow-origin'] == 'https://example.com'
+        assert 'access-control-allow-origin' not in c.post('/api/test', content=b'a', headers={'Origin':'https://evil.example'}).headers
+        assert c.post('/api/test').status_code == 429
+    test_app2 = FastAPI()
+    test_app2.add_middleware(ApiProtection)
+    @test_app2.post('/api/test')
+    async def endpoint2(request: Request):
+        return {'size': len(await request.body())}
+    with TestClient(test_app2) as c:
+        assert c.post('/api/test', content=b'x' * (3 * 1024 * 1024 + 1)).status_code == 413

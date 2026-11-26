@@ -1,17 +1,19 @@
 from datetime import date
-from typing import Literal
+from typing import Annotated, Literal
 from pydantic import BaseModel, Field, HttpUrl
 
+SkillText = Annotated[str, Field(min_length=1, max_length=100)]
+
 class Intent(BaseModel):
-    skills: list[str] = Field(default_factory=list, max_length=30)
-    interests: list[str] = Field(default_factory=list, max_length=20)
+    skills: list[SkillText] = Field(default_factory=list, max_length=30)
+    interests: list[SkillText] = Field(default_factory=list, max_length=20)
     location: str | None = Field(default=None, max_length=200)
     remote: bool | None = None
     kind: Literal['internship', 'project'] | None = None
 
 class SearchRequest(BaseModel):
     query: str = Field(default='', max_length=2000)
-    skills: list[str] = Field(default_factory=list, max_length=30)
+    skills: list[SkillText] = Field(default_factory=list, max_length=30)
     location: str | None = Field(default=None, max_length=200)
     remote: bool | None = None
     kind: Literal['internship', 'project'] | None = None

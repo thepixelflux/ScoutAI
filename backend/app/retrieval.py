@@ -46,7 +46,7 @@ def embed(text: str):
         if not math.isfinite(norm) or norm == 0: raise ValueError('Embedding must have nonzero finite norm')
         return [float(x) / norm for x in raw]
     except Exception:
-        log.warning('Embedding unavailable; using lexical ranking', exc_info=True)
+        log.warning('Embedding unavailable; using lexical ranking')
         return None
 
 def known_skills(db: Session, text: str):
@@ -66,7 +66,7 @@ def parse_intent(db: Session, query: str):
         response.raise_for_status()
         return Intent.model_validate_json(response.json()['choices'][0]['message']['content']), 'llm'
     except Exception:
-        log.warning('Intent provider unavailable; using fallback', exc_info=True)
+        log.warning('Intent provider unavailable; using fallback')
         return fallback, 'fallback'
 
 def search(db: Session, request: SearchRequest) -> SearchResponse:

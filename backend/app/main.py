@@ -1,7 +1,9 @@
 import logging
-from contextlib import asynccontextmanager
+from pathlib import Path
 from fastapi import Depends, FastAPI, HTTPException, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from .security import ApiProtection
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 from .config import settings
@@ -12,7 +14,8 @@ from .schemas import AgentRequest, RecommendationRequest, SearchRequest, SearchR
 
 logging.basicConfig(level=logging.INFO)
 app = FastAPI(title='ScoutAI API', version='1.0.0')
-app.add_middleware(CORSMiddleware, allow_origins=[x.strip() for x in settings.cors_origins.split(',') if x.strip()], allow_methods=['GET','POST'], allow_headers=['Content-Type'])
+app.add_middleware(ApiProtection)
+app.add_middleware(CORSMiddleware, allow_origins=settings.allowed_origins, allow_methods=['GET', 'POST'], allow_headers=['Content-Type'])
 
 @app.get('/api/health')
 def health(db: Session = Depends(get_db)):
@@ -49,3 +52,8 @@ async def extract_resume_endpoint(file: UploadFile = File(...), db: Session = De
         return {'skills': known_skills(db, text), 'characters': len(text)}
     finally:
         await file.close()
+
+# The deployment image bundles the frontend; local API-only development need not.
+static_dir = Path('/app/static')
+if static_dir.is_dir():
+    app.mount('/', StaticFiles(directory=static_dir, html=True), name='frontend')
