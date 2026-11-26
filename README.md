@@ -4,13 +4,13 @@ ScoutAI is a demo internship and project discovery app. Its 150 generated listin
 
 ## Quick start
 
-Requirements: Docker and Docker Compose. Copy `.env.example` to `.env`, then run:
+Requirements: Docker and Docker Compose. Copy `.env.example` to `.env`, then replace `replace_with_local_password` with the same local database password in both `POSTGRES_PASSWORD` and `DATABASE_URL`. Leave the API keys empty to use fallback search. Then run:
 
 ```sh
 docker compose up --build
 ```
 
-Open http://localhost:5173; the API documentation is at http://localhost:8000/docs. Compose waits for PostgreSQL, applies Alembic migrations, and seeds the database only when it contains no opportunities. The database is persisted in the `postgres_data` volume. The default database password is for local development only; change it for any non-local use and update both `POSTGRES_PASSWORD` and `DATABASE_URL` consistently.
+Open http://localhost:5173; the API documentation is at http://localhost:8000/docs. Compose waits for PostgreSQL, applies Alembic migrations, and seeds the database only when it contains no opportunities. The database is persisted in the `postgres_data` volume. Use a strong, unique database password for any non-local use and keep `POSTGRES_PASSWORD` and `DATABASE_URL` consistent.
 
 By default searches use deterministic lexical/skill ranking and rule-based intent parsing, so credentials and model downloads are not needed. To use semantic retrieval, set `EMBEDDINGS_ENABLED=true` in `.env`, ensure the model `sentence-transformers/all-MiniLM-L6-v2` can be downloaded from Hugging Face or is cached, and restart the API. Existing records without embeddings can be populated with:
 
