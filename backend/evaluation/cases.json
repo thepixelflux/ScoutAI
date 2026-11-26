@@ -1,0 +1,18 @@
+{
+  "search": [
+    {"query": "remote Python internship", "expected_skill": "Python", "kind": "internship", "remote": true},
+    {"query": "React project", "expected_skill": "React", "kind": "project"},
+    {"query": "SQL analytics", "expected_skill": "SQL"},
+    {"query": "machine learning internship", "expected_skill": "Machine Learning", "kind": "internship"},
+    {"query": "Docker cloud project", "expected_skill": "Docker", "kind": "project"},
+    {"query": "Figma design internship", "expected_skill": "Figma", "kind": "internship"},
+    {"query": "Kotlin Android project", "expected_skill": "Android", "kind": "project"},
+    {"query": "Linux security internship", "expected_skill": "Linux", "kind": "internship"}
+  ],
+  "tools": [
+    {"message":"Find Python internships", "expected":"search_opportunities"},
+    {"message":"Show remote React projects", "expected":"search_opportunities"},
+    {"message":"details for opportunity 1", "expected":"get_opportunity_details"},
+    {"message":"show id 2", "expected":"get_opportunity_details"}
+  ]
+}

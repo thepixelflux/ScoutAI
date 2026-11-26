@@ -1,0 +1,101 @@
+{
+  "dataset": "evaluation/cases.json",
+  "search_cases": 8,
+  "hit_at_5": 8,
+  "schema_valid": 8,
+  "median_latency_ms": 7.17,
+  "tool_cases": 4,
+  "tools_correct": 4,
+  "searches": [
+    {
+      "query": "remote Python internship",
+      "hit_at_5": true,
+      "schema_valid": true,
+      "latency_ms": 40.15,
+      "intent_mode": "fallback",
+      "retrieval_mode": "lexical+hybrid"
+    },
+    {
+      "query": "React project",
+      "hit_at_5": true,
+      "schema_valid": true,
+      "latency_ms": 7.26,
+      "intent_mode": "fallback",
+      "retrieval_mode": "lexical+hybrid"
+    },
+    {
+      "query": "SQL analytics",
+      "hit_at_5": true,
+      "schema_valid": true,
+      "latency_ms": 9.58,
+      "intent_mode": "fallback",
+      "retrieval_mode": "lexical+hybrid"
+    },
+    {
+      "query": "machine learning internship",
+      "hit_at_5": true,
+      "schema_valid": true,
+      "latency_ms": 7.09,
+      "intent_mode": "fallback",
+      "retrieval_mode": "lexical+hybrid"
+    },
+    {
+      "query": "Docker cloud project",
+      "hit_at_5": true,
+      "schema_valid": true,
+      "latency_ms": 4.68,
+      "intent_mode": "fallback",
+      "retrieval_mode": "lexical+hybrid"
+    },
+    {
+      "query": "Figma design internship",
+      "hit_at_5": true,
+      "schema_valid": true,
+      "latency_ms": 6.87,
+      "intent_mode": "fallback",
+      "retrieval_mode": "lexical+hybrid"
+    },
+    {
+      "query": "Kotlin Android project",
+      "hit_at_5": true,
+      "schema_valid": true,
+      "latency_ms": 5.56,
+      "intent_mode": "fallback",
+      "retrieval_mode": "lexical+hybrid"
+    },
+    {
+      "query": "Linux security internship",
+      "hit_at_5": true,
+      "schema_valid": true,
+      "latency_ms": 7.89,
+      "intent_mode": "fallback",
+      "retrieval_mode": "lexical+hybrid"
+    }
+  ],
+  "tools": [
+    {
+      "message": "Find Python internships",
+      "expected": "search_opportunities",
+      "actual": "search_opportunities",
+      "mode": "fallback"
+    },
+    {
+      "message": "Show remote React projects",
+      "expected": "search_opportunities",
+      "actual": "search_opportunities",
+      "mode": "fallback"
+    },
+    {
+      "message": "details for opportunity 1",
+      "expected": "get_opportunity_details",
+      "actual": "get_opportunity_details",
+      "mode": "fallback"
+    },
+    {
+      "message": "show id 2",
+      "expected": "get_opportunity_details",
+      "actual": "get_opportunity_details",
+      "mode": "fallback"
+    }
+  ]
+}
