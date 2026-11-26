@@ -21,17 +21,4 @@ docker compose up --build
 
 Open [localhost:5173](http://localhost:5173). API docs: [localhost:8000/docs](http://localhost:8000/docs). Migrations and demo data are applied automatically to an empty database.
 
-## Verify
-
-```sh
-docker compose exec api python -m pytest -q
-cd frontend && npm ci && npm run build
-```
-
-To verify a configured Groq provider without embeddings:
-
-```sh
-docker compose exec api python -m scripts.verify_provider
-```
-
 Scores are heuristic, not calibrated probabilities. Avoid submitting sensitive information in search queries.
