@@ -1,96 +1,49 @@
 # ScoutAI
 
-## Deploy the demo on Render (prepared, not deployed)
+ScoutAI is a demo for finding internships and projects by skills, interests, and location. **All 150 seeded opportunities are fictional; they are not open positions.**
 
-This repository includes `render.yaml` and a root `Dockerfile` for one free Render web service serving the built React frontend and FastAPI on the same origin, plus a free Render Postgres database. The database migrations enable pgvector for the existing schema; **embeddings are disabled**, no model is downloaded, and results use keyword and skill ranking. The UI reports the fallback. All 150 seeded opportunities are fictional demo data, not open positions. On an empty database the service runs migrations and seeds the examples on startup; it skips seeding if any opportunities exist. One service instance is assumed.
+- **Stack:** React, Vite, FastAPI, PostgreSQL, Docker.
+- **Search:** keyword and skill-based fallback ranking; embeddings are disabled.
+- **AI:** Groq extracts search intent when configured; rule-based parsing takes over if unavailable. Search results show the active modes.
+- **Privacy:** search queries are stored and may be sent to Groq. Uploaded resumes are processed in memory to extract skills.
 
-Render's free web service spins down after inactivity, and a free Postgres database expires after 30 days. Free tiers have usage limits and may change; review the [current limits](https://render.com/docs/free) and any charges before confirming. This is a demo setup, not a durable production deployment. Render supports the [vector extension](https://render.com/docs/postgresql-extensions). No resources are created by this repository until you explicitly deploy.
+## Run locally
 
-1. Push branch `work` to GitHub. Sign in to [Render](https://dashboard.render.com/) and connect the GitHub account/repository under **Account Settings → Git Deployment Credentials → Add credential**.
-2. In the Render dashboard select **New → Blueprint** (or **Blueprints → New Blueprint Instance**). Select `thepixelflux/ScoutAI`, choose branch `work`, and continue. Render reads `render.yaml` from that branch.
-3. Review the proposed resources: `scoutai-demo` is a **free** Docker web service and `scoutai-db` is **free** Postgres 16. Choose the same region for both if prompted. Review the price and do not accept paid options. Render automatically injects the database connection string; do not paste it into source code.
-4. When prompted for `LLM_API_KEY`, paste your Groq API key into Render's secret environment variable field. Never put it in Git or the frontend. The Blueprint uses `https://api.groq.com/openai/v1` and `openai/gpt-oss-20b`; confirm the model is available to your account. Review Groq's current usage limits and billing before use. Queries are sent to Groq for intent parsing; if the provider fails, rule-based parsing takes over. Keep `EMBEDDINGS_ENABLED=false` and `CORS_ORIGINS` empty for the same-origin site.
-5. Only when ready to deploy, click **Apply** / **Create Blueprint Instance**. Wait for the database and web service to become healthy, then open the web service's `onrender.com` URL. Search for “Python internship”: the screen should label results **FICTIONAL DEMO** and show **Keyword and skills ranking (fallback)**. It reports AI intent or rule-based intent fallback separately. Open `/api/health` to check the database connection.
-6. Under the web service's **Environment** page, update the Groq key if needed and redeploy. Never expose database credentials or the key in the browser, screenshots, or logs. To stop the demo, delete the Blueprint resources in Render; the free database expires independently.
+Requires Docker and Docker Compose.
 
-API requests have a 3 MiB body limit and a per-process limit of 30 requests per minute per connection IP, plus 300 total per minute. Health checks and CORS preflights are excluded. The server deliberately ignores untrusted forwarded headers: behind Render's proxy multiple visitors may share a limit, and restarts reset counters. This is an abuse deterrent for a single demo instance, not a distributed or user-specific quota. Add a trusted edge/distributed rate limiter and authentication before a larger public rollout. CORS is disabled for cross-origin browsers in the Blueprint; set `CORS_ORIGINS` to explicit comma-separated origins only if a separate frontend is introduced. The API persists search queries in `search_logs`; avoid submitting sensitive information. Resume contents are processed in memory and only extracted skills are returned.
-
-The instructions below describe the earlier local Compose and optional embedding workflows; they are not required for this deployment.
-
-
-ScoutAI is a demo internship and project discovery app. Its 150 generated listings are **fictional samples**, not real vacancies. Imported listings are labeled verified only because the importer is intended for sources verified by the operator; ScoutAI does not independently verify them.
-
-## Quick start
-
-Requirements: Docker and Docker Compose. Copy `.env.example` to `.env`, then replace `replace_with_local_password` with the same local database password in both `POSTGRES_PASSWORD` and `DATABASE_URL`. Leave the API keys empty to use fallback search. Then run:
+1. Copy `.env.example` to `.env`.
+2. Set the same database password in `POSTGRES_PASSWORD` and `DATABASE_URL`. Optionally set `LLM_API_KEY` for Groq; leave it empty for rule-based intent. Never commit `.env` or API keys.
+3. Start the app:
 
 ```sh
 docker compose up --build
 ```
 
-Open http://localhost:5173; the API documentation is at http://localhost:8000/docs. Compose waits for PostgreSQL, applies Alembic migrations, and seeds the database only when it contains no opportunities. The database is persisted in the `postgres_data` volume. Use a strong, unique database password for any non-local use and keep `POSTGRES_PASSWORD` and `DATABASE_URL` consistent.
+Open [localhost:5173](http://localhost:5173). API docs: [localhost:8000/docs](http://localhost:8000/docs). Migrations and demo data are applied automatically to an empty database.
 
-By default searches use deterministic lexical/skill ranking and rule-based intent parsing, so credentials and model downloads are not needed. To use semantic retrieval, set `EMBEDDINGS_ENABLED=true` in `.env`, ensure the model `sentence-transformers/all-MiniLM-L6-v2` can be downloaded from Hugging Face or is cached, and restart the API. Existing records without embeddings can be populated with:
+## Deploy on Render
 
-```sh
-docker compose exec api python -m scripts.embed_existing
-```
+The included `render.yaml` configures one free Docker web service for the frontend and API, plus free PostgreSQL. **Prepared only; not deployed.**
 
-To use an OpenAI-compatible provider, set `LLM_API_KEY`, `LLM_BASE_URL`, and `LLM_MODEL` in `.env` and restart the API. The provider must support chat completions, JSON schema response format, and tool calling. If calls fail, the API falls back to deterministic behavior. Never commit `.env` or keys.
+1. In [Render](https://dashboard.render.com/), connect GitHub via **Account Settings → Git Deployment Credentials → Add credential**.
+2. Select **New → Blueprint**, choose `thepixelflux/ScoutAI` and branch `work`.
+3. Review `scoutai-demo` and `scoutai-db`; confirm both are on free plans and check any charges. Render supplies the database URL.
+4. Enter your Groq key in the `LLM_API_KEY` secret field. Keep `EMBEDDINGS_ENABLED=false` and `CORS_ORIGINS` empty. Check Groq's model availability and usage limits.
+5. When ready, click **Apply** / **Create Blueprint Instance**. Open the web-service URL and search for “Python internship”. Results should show **FICTIONAL DEMO** and **Keyword and skills ranking (fallback)**. Check `/api/health` for database connectivity.
 
-## Architecture
+Render's free web service sleeps after inactivity, and free PostgreSQL expires after 30 days. Check [current limits](https://render.com/docs/free) before deployment. The single-instance rate limiter is a demo safeguard, not a distributed production quota; visitors behind the same proxy can share a limit.
 
-React/Vite/Tailwind calls FastAPI through Nginx in Compose (or the Vite proxy during local development). Pydantic validates input and output; SQLAlchemy and Alembic manage PostgreSQL with pgvector. Search extracts intent, applies SQL filters, selects up to 500 candidates ordered by cosine distance when embeddings are available, then ranks with semantic similarity (or lexical overlap), skill overlap, and filter preferences. Scores are heuristic, not calibrated probabilities. The response identifies retrieval and intent modes. The agent selects one of `search_opportunities` or `get_opportunity_details` through a provider tool call or a deterministic fallback; its output is retrieved data rather than free-form generated claims. Explanations are templates using listing fields only.
-
-The dashboard accepts PDF, DOCX, or UTF-8 text resumes up to 2 MB, with at most 20 PDF pages and 30,000 extracted characters. DOCX expansion is capped at 10 MB. It extracts known skills in memory and does not retain the file or text; scanned image-only PDFs, encrypted files, user-profile management, and authentication are not supported. Profile tables are reserved for future use. Search queries are stored in `search_logs`; avoid including sensitive information. This is an MVP, not a hardened public deployment: add authentication, rate limits, secret management, retention policies, and appropriate database credentials before production use.
-
-## API examples
+## Verify
 
 ```sh
-curl -s http://localhost:8000/api/search -H 'Content-Type: application/json' -d '{"query":"remote Python internship","limit":5}'
-curl -s http://localhost:8000/api/opportunities/1
-curl -s http://localhost:8000/api/recommendations -H 'Content-Type: application/json' -d '{"query":"data science","resume_text":"Python and SQL"}'
-curl -s http://localhost:8000/api/agent -H 'Content-Type: application/json' -d '{"message":"details for opportunity 1"}'
+docker compose exec api python -m pytest -q
+cd frontend && npm ci && npm run build
 ```
 
-Explicit `location`, `kind`, `remote`, and `skills` fields can refine searches. The rule-based fallback recognizes known skills, remote and kind; location and interests require explicit filters or a working provider. A blank search browses the first candidates. Scores indicate relative heuristic fit and may be zero for broad searches.
-
-## Import
-
-Verify listings and source permission independently before importing. CSV requires headers `title,organization,description,kind,location,remote,source_url,source_date,skills`. Use `internship` or `project` for kind, `true` or `false` for remote, ISO `YYYY-MM-DD` dates, and semicolon-separated skills. Source URLs must be HTTP(S). Run `docker compose exec api python -m scripts.import_csv /path/in/container.csv`; mount or copy the CSV into the container first. Imports are transactional but are not deduplicated.
-
-## Tests and evaluation
-
-With the stack running, `docker compose exec api python -m pytest -q` runs integration checks against the configured database. `docker compose exec api python -m scripts.evaluate` runs the versioned cases in `backend/evaluation/cases.json` and reports top-five skill hits, schema validity, tool selection, observed modes, and request latency. This is a tiny synthetic check, not a benchmark or production relevance metric. `cd frontend && npm ci && npm run build` validates the frontend build. The recorded run in `backend/evaluation/latest-results.json` used 150 synthetic samples, lexical and rule-based fallbacks, no LLM, and no embeddings. It found a relevant skill in the top five for 8/8 cases, validated 8/8 responses, and selected the expected fallback tool in 4/4 cases; median search latency was 7.17 ms on this machine. This tiny, hand-written dataset is not independent of the sample catalog, and timing is not a deployment benchmark.
-
-## Provider configuration and verification
-
-`LLM_API_KEY` is the API key for an OpenAI-compatible Chat Completions provider. Set it in the ignored `.env` file (or inject it using your deployment secret manager); never paste it into chat or commit it. The supplied `.env.example` selects Groq with `LLM_BASE_URL=https://api.groq.com/openai/v1` and `LLM_MODEL=openai/gpt-oss-20b`. The application defaults remain OpenAI when these values are omitted. For another provider, set both to its compatible API base URL and model. The endpoint must support strict `json_schema` response formats and function tool calls. The API sends the search query to the provider, but not the uploaded resume text: only locally extracted skills are sent as explicit filters.
-
-After setting these values, recreate the API (`docker compose up -d --force-recreate api`) and run `docker compose exec api python -m scripts.verify_provider`. This fails if the request silently falls back or does not extract the expected intent and tool. No live provider was available for the recorded run. If the provider hostname is blocked, permit its HTTPS destination in your environment's network settings.
-
-To enable local embeddings, set `EMBEDDINGS_ENABLED=true` and `EMBEDDING_PROVIDER=local`, permit HTTPS access to `huggingface.co` and the model's redirected artifact hosts, recreate the API, and run `docker compose exec api python -m scripts.embed_existing`. The model must be available in the local cache or reachable on Hugging Face. A hosted alternative is described below. In the recorded environment the proxy returned HTTP 403 for `huggingface.co`; real model generation therefore remains unverified. Search responses and the UI explicitly identify semantic, mixed, or keyword fallback retrieval and LLM or rule-based intent.
-
-## Deployment notes
-
-Compose builds a static frontend served by Nginx, proxies `/api` to the API, and runs migrations before startup. `WEB_PORT`, `API_PORT`, `API_UPSTREAM`, `DATABASE_URL`, and `CORS_ORIGINS` are configurable; `DATABASE_URL` must be a PostgreSQL URL usable from the API container. The sample database volume and password are for local development. Set strong credentials, a secret manager, TLS termination, authentication, rate limits, network restrictions, and backups before exposing the service. The included Compose file is a deployment starting point, not a claim of a public deployment.
-
-If your build network uses a trusted intercepting proxy, provide its CA bundle to Docker BuildKit as the optional `build_ca` secret (for example `docker build --secret id=build_ca,src=/path/to/trusted-ca-bundle -t scoutai-api backend` and the equivalent command for `frontend`); this keeps TLS verification enabled and the CA out of the resulting images. Then start with `docker compose up -d --no-build`. Do not commit certificates or private configuration.
-
-## Enable real AI
-
-The simplest LLM option is the Groq API. Create an API key in the [Groq console](https://console.groq.com/keys), and place it in `LLM_API_KEY` in your ignored `.env` file or supply it as a runtime secret; do not put the key in chat. The supplied example selects `LLM_BASE_URL=https://api.groq.com/openai/v1` and `LLM_MODEL=openai/gpt-oss-20b`. Groq offers a free tier subject to its current account and model limits; check its current pricing and availability. Groq's [SDK](https://github.com/groq/groq-python/blob/main/src/groq/types/chat/completion_create_params.py) documents both `json_schema` and tool calling, with schema support restricted to [supported models](https://console.groq.com/docs/structured-outputs#supported-models). The selected model and this exact integration have not been verified with a live key. The application makes separate calls for structured intent and tool selection, and validates the JSON with Pydantic.
-
-For a model-download-free embedding path, set `EMBEDDINGS_ENABLED=true`, `EMBEDDING_PROVIDER=openai`, `EMBEDDING_BASE_URL=https://api.openai.com/v1`, and `EMBEDDING_MODEL=text-embedding-3-small`, and securely provide a separate `EMBEDDING_API_KEY` from an OpenAI account. The provider must support the OpenAI embeddings endpoint and `dimensions=384`. OpenAI embeddings may incur charges and are not assumed to have a free tier; the Groq key is not an OpenAI embedding key. Opportunity text and search queries are sent to the embedding provider. Alternatively, keep `EMBEDDING_PROVIDER=local` and use the existing MiniLM model from a trusted cache.
-
-In this cloud environment, the enforced network policy denied `api.groq.com`, `api.openai.com`, and `huggingface.co`. Add `api.groq.com` and, for hosted OpenAI embeddings, `api.openai.com` to the environment's allowed destinations in its settings. If using local MiniLM, allow the model host and any artifact redirect hosts instead. After changing access, recreate the API container. If the environment uses a TLS-intercepting proxy, containers must trust its CA. For this cloud session, create a temporary override outside the repository with `services.api.volumes` mapping `/etc/ssl/certs/ca-certificates.crt` to `/run/scout/ca-bundle.crt:ro`, and `services.api.environment.SSL_CERT_FILE` set to `/run/scout/ca-bundle.crt`. Use `docker compose -f compose.yaml -f /tmp/scout-ca.yaml up -d --force-recreate api` to apply it. Keep certificate verification enabled.
-
-After configuring credentials and access, run:
+To verify a configured Groq provider without embeddings:
 
 ```sh
-docker compose up -d --force-recreate api
-docker compose exec api python -m scripts.embed_existing
-docker compose exec api python -m scripts.verify_ai
+docker compose exec api python -m scripts.verify_provider
 ```
 
-The final command performs real structured intent and tool-selection calls, generates a real embedding, checks its stored match with pgvector cosine distance, and requires semantic search. It exits nonzero on fallback. To check one side independently use `python -m scripts.verify_ai --llm-only` or `--embedding-only` inside the API container. The embed command fills missing vectors only. When switching models, use `python -m scripts.embed_existing --replace` to replace vectors from other models; it makes one request per listing and may incur charges. The database labels each vector with its model and endpoint and does not compare incompatible spaces. If generation fails, the backfill transaction is rolled back and search remains usable with lexical fallback. Re-embed after changing listing text.
+Scores are heuristic, not calibrated probabilities. Avoid submitting sensitive information in search queries.
